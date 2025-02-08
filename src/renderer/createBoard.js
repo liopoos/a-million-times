@@ -96,20 +96,9 @@ const renderForeground = (ctx, values, options = {}) => {
 };
 
 const createBoard = (columns, rows, options = {}) => {
-    const {
-        clockSize,
-        pointerSize,
-        clockColorStopTop,
-        clockColorStopBottom,
-        pointerColor,
-        debugColor,
-        debugColor2,
-        debug
-    } = options;
-
-    const width = columns * clockSize + (columns - 1) * pointerSize;
-    const height = rows * clockSize + (rows - 1) * pointerSize;
-
+    let currentOptions = Object.assign({}, options);
+    const width = columns * options.clockSize + (columns - 1) * options.pointerSize;
+    const height = rows * options.clockSize + (rows - 1) * options.pointerSize;
 
     const background = createCanvas(width, height);
     const backgroundCtx = background.getContext('2d');
@@ -126,15 +115,21 @@ const createBoard = (columns, rows, options = {}) => {
 
     const el = h('div', { style }, background, foreground);
 
-    renderBackground(backgroundCtx, {
-        columns,
-        rows,
-        clockSize,
-        pointerSize,
-        clockColorStopTop,
-        clockColorStopBottom,
-        pointerColor
-    });
+    // Initial background rendering
+    const redrawBackground = () => {
+        backgroundCtx.clearRect(0, 0, width, height);
+        renderBackground(backgroundCtx, {
+            columns,
+            rows,
+            clockSize: currentOptions.clockSize,
+            pointerSize: currentOptions.pointerSize,
+            clockColorStopTop: currentOptions.clockColorStopTop,
+            clockColorStopBottom: currentOptions.clockColorStopBottom,
+            pointerColor: currentOptions.pointerColor
+        });
+    };
+
+    redrawBackground();
 
     return {
         el: () => el,
@@ -143,13 +138,19 @@ const createBoard = (columns, rows, options = {}) => {
             renderForeground(foregroundCtx, values, {
                 columns,
                 rows,
-                clockSize,
-                pointerSize,
-                pointerColor,
-                debugColor,
-                debugColor2,
-                debug
+                clockSize: currentOptions.clockSize,
+                pointerSize: currentOptions.pointerSize,
+                pointerColor: currentOptions.pointerColor,
+                debugColor: currentOptions.debugColor,
+                debugColor2: currentOptions.debugColor2,
+                debug: currentOptions.debug
             });
+        },
+        updateTheme: (newOptions) => {
+            currentOptions = Object.assign({}, currentOptions, newOptions);
+            redrawBackground();
+            // Force redraw foreground (pointers)
+            foregroundCtx.clearRect(0, 0, width, height);
         }
     };
 };

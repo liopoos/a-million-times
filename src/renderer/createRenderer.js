@@ -45,13 +45,42 @@ const createRenderer = (root, options = {}) => {
         root.appendChild(debugBoard.el());
     }
 
-    return function render(values, velocities) {
+    const updateTheme = (themeOptions) => {
+        // Update root background color
+        root.style.backgroundColor = themeOptions.backgroundColor;
+        
+        // Update clock canvas
+        board.updateTheme({
+            clockColorStopTop: themeOptions.clockColorStopTop,
+            clockColorStopBottom: themeOptions.clockColorStopBottom,
+            pointerColor: themeOptions.pointerColor
+        });
+
+        // Update debug view styles
+        if (debug && debugBoard) {
+            const debugElement = debugBoard.el();
+            debugElement.style.color = themeOptions.debugColorText;
+            const debugItems = debugElement.querySelectorAll('.debug-item');
+            debugItems.forEach(item => {
+                item.style.color = themeOptions.debugColor;
+            });
+        }
+
+        // Update options
+        Object.assign(options, themeOptions);
+    };
+
+    const render = function render(values, velocities) {
         board.set(values);
         if (debug) {
             const target = debugTarget === 'values' ? values : velocities;
             debugBoard.set(target);
         }
     };
+
+    return Object.assign(render, {
+        updateTheme
+    });
 };
 
 export default createRenderer;
