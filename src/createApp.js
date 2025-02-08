@@ -1,7 +1,23 @@
 import defaultCreateRenderer from './renderer/createRenderer';
 import isNil from './util/isNil';
+import { themes } from './themes';
 
 const createApp = (root, options = {}) => {
+    let currentTheme = 'dark';
+    let renderer;
+    
+    const updateTheme = (themeName) => {
+        if (themes[themeName]) {
+            currentTheme = themeName;
+            const themeOptions = themes[themeName];
+            renderer.updateTheme(themeOptions);
+            // Update theme button active state
+            if (typeof window.updateActiveTheme === 'function') {
+                window.updateActiveTheme(themeName);
+            }
+        }
+    };
+
     const {
         columns = 10,
         rows = 10,
@@ -12,36 +28,25 @@ const createApp = (root, options = {}) => {
         values = [],
         debug = false,
         debugTarget = 'values',
-        backgroundColor = '#f7f7f7',
-        clockColorStopTop = '#eee',
-        clockColorStopBottom = '#fff',
-        pointerColor = '#000',
-        debugColor = '#000',
-        debugColor2 = '#0289bd',
-        debugColorText = '#fff',
         createRenderer = defaultCreateRenderer
     } = options;
 
-    const render = createRenderer(root, {
+    // Merge configuration using Object.assign
+    renderer = createRenderer(root, Object.assign({
         columns,
         rows,
         clockSize,
         pointerSize,
         debug,
-        debugTarget,
-        backgroundColor,
-        clockColorStopTop,
-        clockColorStopBottom,
-        pointerColor,
-        debugColor,
-        debugColor2,
-        debugColorText
-    });
+        debugTarget
+    }, themes[currentTheme]));
 
     window.getValues = () => values.toString();
     window.getVelocities = () => velocities.toString();
     window.getState = () => `const values = [${values.toString()}];\nconst velocities = [${velocities.toString()}]`;
 
+    // Expose theme switching method globally
+    window.changeTheme = updateTheme;
 
     let runnerIndex = 0;
     let update;
@@ -99,7 +104,7 @@ const createApp = (root, options = {}) => {
             next();
         }
 
-        render(values, velocities);
+        renderer(values, velocities);
         requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
